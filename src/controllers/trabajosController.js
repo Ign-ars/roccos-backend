@@ -161,7 +161,13 @@ const crearTrabajo = async (req, res) => {
         .filter(Boolean);
 
       if (tokens.length > 0) {
+        console.log(`📲 Enviando notificación FCM a ${tokens.length} trabajador(es)`);
+
         const response = await admin.messaging().sendEachForMulticast({
+          notification: {
+            title: "Nuevo trabajo disponible",
+            body: titulo
+          },
           data: {
             title: "Nuevo trabajo disponible",
             body: titulo,
@@ -170,16 +176,32 @@ const crearTrabajo = async (req, res) => {
             abrir_trabajos: "true"
           },
           android: {
-            priority: "high"
+            priority: "high",
+            notification: {
+              channelId: "trabajos_channel",
+              sound: "default",
+              clickAction: "FLUTTER_NOTIFICATION_CLICK"
+            }
           },
           tokens
         });
+
+        console.log(
+          `✅ FCM enviado. Correctos: ${response.successCount}, Fallidos: ${response.failureCount}`
+        );
 
         const tokensInvalidos = [];
 
         response.responses.forEach((r, index) => {
           if (!r.success) {
             const code = r.error?.code || "";
+
+            console.error("❌ Error FCM token:", {
+              token: tokens[index],
+              code,
+              message: r.error?.message
+            });
+
             if (
               code === "messaging/registration-token-not-registered" ||
               code === "messaging/invalid-registration-token"
@@ -197,6 +219,8 @@ const crearTrabajo = async (req, res) => {
             [tokensInvalidos]
           );
         }
+      } else {
+        console.log("⚠️ No hay tokens FCM de trabajadores registrados");
       }
     } catch (errorFcm) {
       console.error("Error enviando FCM al crear trabajo:", errorFcm);
