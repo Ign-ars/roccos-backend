@@ -180,7 +180,6 @@ const crearTrabajo = async (req, res) => {
             notification: {
               channelId: "trabajos_channel",
               sound: "default",
-              clickAction: "FLUTTER_NOTIFICATION_CLICK"
             }
           },
           tokens
